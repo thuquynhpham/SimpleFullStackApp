@@ -1,20 +1,26 @@
 <template>
-    <section class="register">
-        <h1>Login</h1>
+    <section class="page page--center">
+        <div class="card form-card">
+            <h1 class="card__title">Login</h1>
 
-        <form @submit.prevent="login">
-            <label for="email">Email:</label>
-            <input id="email" v-model="form.email" type="email" required />
+            <form class="form" @submit.prevent="login">
+                <div class="form__field">
+                    <label class="form__label" for="email">Email</label>
+                    <input id="email" v-model="form.email" type="email" class="form__input" required />
+                </div>
 
-            <label for="password">Password:</label>
-            <input id="password" v-model="form.password" type="password" required />
+                <div class="form__field">
+                    <label class="form__label" for="password">Password</label>
+                    <input id="password" v-model="form.password" type="password" class="form__input" required />
+                </div>
 
-            <button type="submit" :disabled="loading">
-                {{ loading ? 'Logging In...' : 'Log In' }}
-            </button>
-        </form>
+                <button type="submit" class="btn btn--primary btn--full" :disabled="loading">
+                    {{ loading ? 'Logging in…' : 'Log In' }}
+                </button>
+            </form>
 
-        <p v-if="error" class="error-message">{{ error }}</p>
+            <p v-if="error" class="alert alert--error">{{ error }}</p>
+        </div>
     </section>
 </template>
 
@@ -43,7 +49,7 @@ const login = async () => {
 
         const token = data;
         setAuthToken(token);
-        await router.push('/products')
+        await router.push('/products');
     } catch (err: any) {
         error.value = err.response?.data?.message || err.response?.data || 'Login failed.';
     } finally {
@@ -51,48 +57,3 @@ const login = async () => {
     }
 };
 </script>
-
-<style scoped>
-.register {
-    max-width: 400px;
-    margin: 0 auto;
-    padding: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background-color: #f9f9f9;
-}
-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
-}
-input {
-    width: 100%;
-    padding: 0.5rem;
-    margin-bottom: 1rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-}
-button {
-    width: 100%;
-    padding: 0.75rem;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    font-size: 1rem;
-    cursor: pointer;
-}
-button:disabled {
-    background-color: #94d3a2;
-    cursor: not-allowed;
-}
-.success-message {
-    color: green;
-    margin-top: 1rem;
-}
-.error-message {
-    color: red;
-    margin-top: 1rem;
-}
-</style>

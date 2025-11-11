@@ -8,6 +8,7 @@ type UserProfile = {
   email: string;
   createdAt: string;
   name?: string | null;
+  role?: string | null;
 };
 
 const profile = ref<UserProfile | null>(null);
@@ -43,85 +44,21 @@ watch(
 </script>
 
 <template>
-  <div class="app">
-    <header class="top-nav">
-      <h1 class="brand">Stock Movement App</h1>
-      <nav class="links">
-        <span v-if="loadingProfile" class="greeting">Loading…</span>
-        <span v-else-if="profile" class="greeting">
-          Hello! {{ profile.name || profile.email }}
+  <div class="app-shell">
+    <header class="navbar">
+      <h1 class="navbar__brand">Stock Movement App</h1>
+      <nav class="navbar__links">
+        <span v-if="loadingProfile" class="navbar__greeting text-muted">Loading…</span>
+        <span v-else-if="profile" class="navbar__greeting">
+          Hello! {{ profile.name || profile.email }}<span v-if="profile.role"> ({{ profile.role }})</span>
         </span>
-        <RouterLink to="/register" class="nav-link primary">Register</RouterLink>
-        <RouterLink to="/products" class="nav-link">Products</RouterLink>
+        <RouterLink to="/register" class="btn btn--primary">Register</RouterLink>
+        <RouterLink to="/products" class="btn">Products</RouterLink>
       </nav>
     </header>
 
-    <main class="content">
+    <main class="app-shell__content">
       <RouterView />
     </main>
   </div>
 </template>
-
-<style scoped>
-.app {
-  min-height: 100vh;
-  width: 100%;
-  background: #f5f5f5;
-  display: flex;
-  flex-direction: column;
-}
-
-.top-nav {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background-color: #202c37;
-  color: white;
-}
-
-.brand {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-}
-
-.links {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-}
-
-.greeting {
-  font-weight: 500;
-  color: #e5e7eb;
-}
-
-.nav-link {
-  padding: 0.4rem 0.9rem;
-  color: white;
-  text-decoration: none;
-  border-radius: 4px;
-  font-weight: 500;
-  border: 1px solid transparent;
-}
-
-.nav-link:hover {
-  background-color: #3a4755;
-}
-
-.nav-link.primary {
-  background-color: #42b983;
-  border-color: #42b983;
-}
-
-.nav-link.primary:hover {
-  background-color: #369870;
-  border-color: #369870;
-}
-
-.content {
-  flex: 1;
-  padding: 0;
-}
-</style>

@@ -13,33 +13,43 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        In = ParameterLocation.Header,
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT",
-        Description = "Paste the token"
-    });
 
-    options.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-}); // Add Package Install-Package Swashbuckle.AspNetCore -Version 5.3.3
+// UNNECCESARY
+# region swaggergen
+//builder.Services.AddSwaggerGen(options =>
+//{
+//    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+//    {
+//        In = ParameterLocation.Header,
+//        Name = "Authorization",
+//        Type = SecuritySchemeType.Http,
+//        Scheme = "bearer",
+//        BearerFormat = "JWT",
+//        Description = "Paste the token"
+//    });
+
+//    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+//    {
+//        {
+//            new OpenApiSecurityScheme
+//            {
+//                Reference = new OpenApiReference
+//                {
+//                    Type = ReferenceType.SecurityScheme,
+//                    Id = "Bearer"
+//                }
+//            },
+//            Array.Empty<string>()
+//        }
+//    });
+//}); // Add Package Install-Package Swashbuckle.AspNetCore -Version 5.3.3
+#endregion
+// NO NEED
+
+builder.Services.AddDbContext<ApiDBContext>(options =>
+    options.UseSqlite(builder.Configuration.GetConnectionString("local")));
+
+# region Authentication
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
@@ -62,9 +72,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
         }
     };
 });
-builder.Services.AddDbContext<ApiDBContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("local")));
+#endregion
 
+# region AddCors
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("Frontend", policy =>
@@ -74,17 +84,20 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+#endregion
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+//// Configure the HTTP request pipeline.
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseSwagger();
+//    app.UseSwaggerUI();
+//}
+
+
 app.UseHttpsRedirection();
 
 app.UseCors("Frontend");

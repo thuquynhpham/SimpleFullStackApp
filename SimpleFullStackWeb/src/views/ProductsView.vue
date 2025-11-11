@@ -1,114 +1,120 @@
 <template>
-  <section class="products">
-    <header class="products__header">
+  <section class="page">
+    <header class="section-header">
       <h1>Products</h1>
-      <div class="actions">
-        <button class="primary">Add Product</button>
-        <button @click="loadProducts" :disabled="loading">
+      <div class="section-actions">
+        <button class="btn btn--secondary btn--sm" type="button">Add Product</button>
+        <button class="btn btn--ghost btn--sm" type="button" @click="loadProducts" :disabled="loading">
           {{ loading ? 'Refreshing…' : 'Refresh' }}
         </button>
       </div>
     </header>
 
-    <section class="filters">
-      <div class="field">
-        <label for="search">Search</label>
+    <section class="card filters-grid">
+      <div class="form__field">
+        <label class="form__label" for="search">Search</label>
         <input
           id="search"
           v-model="search"
           type="text"
+          class="form__input"
           placeholder="SKU or Name"
           @keyup.enter="applyFilters"
         />
       </div>
-      <div class="field">
-        <label for="minPrice">Min Price</label>
+      <div class="form__field">
+        <label class="form__label" for="minPrice">Min Price</label>
         <input
           id="minPrice"
           v-model="minPrice"
           type="number"
           min="0"
           step="0.01"
+          class="form__input"
         />
       </div>
-      <div class="field">
-        <label for="maxPrice">Max Price</label>
+      <div class="form__field">
+        <label class="form__label" for="maxPrice">Max Price</label>
         <input
           id="maxPrice"
           v-model="maxPrice"
           type="number"
           min="0"
           step="0.01"
+          class="form__input"
         />
       </div>
-      <div class="field">
-        <label for="sort">Sort By</label>
-        <select id="sort" v-model="sortBy">
+      <div class="form__field">
+        <label class="form__label" for="sort">Sort By</label>
+        <select id="sort" v-model="sortBy" class="form__input">
           <option value="createdAt">Created At</option>
           <option value="name">Name</option>
           <option value="price">Price</option>
         </select>
       </div>
-      <div class="field">
-        <label for="dir">Direction</label>
-        <select id="dir" v-model="sortDir">
+      <div class="form__field">
+        <label class="form__label" for="dir">Direction</label>
+        <select id="dir" v-model="sortDir" class="form__input">
           <option value="asc">Ascending</option>
           <option value="desc">Descending</option>
         </select>
       </div>
-      <div class="field">
-        <label for="pageSize">Page Size</label>
-        <select id="pageSize" v-model.number="pageSize" @change="changePageSize">
+      <div class="form__field">
+        <label class="form__label" for="pageSize">Page Size</label>
+        <select id="pageSize" v-model.number="pageSize" class="form__input" @change="changePageSize">
           <option :value="5">5</option>
           <option :value="10">10</option>
           <option :value="25">25</option>
           <option :value="50">50</option>
         </select>
       </div>
-      <div class="field buttons">
-        <button class="secondary" @click="applyFilters">Apply</button>
-        <button class="ghost" @click="resetFilters">Reset</button>
+      <div class="filters-grid__actions">
+        <button class="btn btn--secondary btn--sm" type="button" @click="applyFilters">Apply</button>
+        <button class="btn btn--ghost btn--sm" type="button" @click="resetFilters">Reset</button>
       </div>
     </section>
 
-    <p v-if="error" class="error">{{ error }}</p>
+    <p v-if="error" class="alert alert--error">{{ error }}</p>
 
-    <table v-if="products.length" class="products__table">
-      <thead>
-        <tr>
-          <th>SKU</th>
-          <th>Name</th>
-          <th class="numeric">Price</th>
-          <th class="numeric">Quantity</th>
-          <th class="actionscol">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="product in products" :key="product.productId">
-          <td width="20%">{{ product.sku }}</td>
-          <td width="25%">{{ product.name }}</td>
-          <td width="15%" class="numeric">{{ product.price.toFixed(2) }}</td>
-          <td width="15%" class="numeric">{{ product.quantity }}</td>
-          <td class="actionscol">
-            <button class="secondary">Edit</button>
-            <button class="danger" style="margin-left: 5px;">Delete</button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <p v-else-if="!loading" class="empty">No products available.</p>
+    <div v-if="products.length" class="card table-wrapper">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>SKU</th>
+            <th>Name</th>
+            <th class="table__numeric">Price</th>
+            <th class="table__numeric">Quantity</th>
+            <th class="table__actions">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="product in products" :key="product.productId">
+            <td>{{ product.sku }}</td>
+            <td>{{ product.name }}</td>
+            <td class="table__numeric">{{ product.price.toFixed(2) }}</td>
+            <td class="table__numeric">{{ product.quantity }}</td>
+            <td class="table__actions">
+              <button class="btn btn--ghost btn--sm" type="button">Edit</button>
+              <button class="btn btn--danger btn--sm" type="button">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <p v-else-if="!loading" class="text-muted">No products available.</p>
 
     <footer v-if="total > 0" class="pagination">
-      <div>
+      <div class="text-muted">
         Showing {{ products.length }} of {{ total }} product<span v-if="total !== 1">s</span>
       </div>
       <div class="pagination__controls">
-        <button @click="changePage(pageNum - 1)" :disabled="pageNum === 1">
+        <button class="btn btn--ghost btn--sm" type="button" @click="changePage(pageNum - 1)" :disabled="pageNum === 1">
           Previous
         </button>
         <span>Page {{ pageNum }} of {{ totalPages }}</span>
         <button
+          class="btn btn--ghost btn--sm"
+          type="button"
           @click="changePage(pageNum + 1)"
           :disabled="pageNum === totalPages"
         >
