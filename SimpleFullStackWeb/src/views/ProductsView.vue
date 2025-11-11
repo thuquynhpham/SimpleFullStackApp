@@ -2,22 +2,29 @@
     <section class="products">
         <header class="products_header">
             <h1>Products</h1>
+            <div class="acctions">
+            <button>Add</button>
+
+
+            </div>
         </header>        
         <table v-if="products.length" class="products_table">
-            <thead>
+            <thead >
                 <tr>
                     <th>SKU</th>
                     <th>Name</th>
                     <th>Price</th>
                     <th>Quantity</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
                 <tr v-for="product in products" :key="product.id">
-                    <td>{{ product.sku }}</td>
-                    <td>{{ product.name }}</td>
-                    <td>{{ product.price.toFixed(2) }}</td>
-                    <td>{{ product.quantity }}</td>
+                    <td width="20%">{{ product.sku }}</td>
+                    <td width="20%">{{ product.name }}</td>
+                    <td width="20%" class="numberic">{{ product.price.toFixed(2) }}</td>
+                    <td width="20%" class="numberic">{{ product.quantity }}</td>
+                    <td><button>Edit</button><button style="margin-left: 5px; background-color: red;">Delete</button></td>
                 </tr>
             </tbody>
 
@@ -64,7 +71,7 @@ onMounted(() => {
 
 <style scoped>
 .products {
-    max-width: 800px;
+    max-width: 1200px;
     margin: 50px auto;
     padding: 1rem;
     background-color: #fff;
@@ -86,9 +93,30 @@ onMounted(() => {
     align-items: center;
 }
 
-.products_table th, .products_table td {
+.products_table th, .products_table td  {
     padding: 0.75rem;
     text-align: left;
     border-bottom: 1px solid #ddd;
+}
+
+.products_table th {
+  text-align: left;
+  background: #f9fafb;
+}
+.numberic {
+    text-align: right;
+}
+
+button {
+    padding: 0.5rem 1rem;
+    background-color: #42b983;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #369870;
 }
 </style>
