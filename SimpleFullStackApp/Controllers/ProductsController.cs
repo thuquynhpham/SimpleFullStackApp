@@ -20,10 +20,73 @@ namespace SimpleFullStackApp.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(
+            [FromQuery] string? q,
+            [FromQuery] decimal? minPrice,
+            [FromQuery] decimal? maxPrice,
+            [FromQuery] string? sort,
+            [FromQuery] string? dir,
+            [FromQuery] int pageNum = 1,
+            [FromQuery] int pageSize = 10)
         {
-            var products = await _dbContext.Products.ToListAsync();
-            return Ok(products);
+            var query = _dbContext.Products.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(q))
+            {
+                var pattern = $"%{q.Trim()}%";
+                query = query.Where(p =>
+                    EF.Functions.Like(p.SKU, pattern) ||
+                    EF.Functions.Like(p.Name, pattern));
+            }
+
+            if (minPrice.HasValue)
+            {
+                query = query.Where(p => p.Price >= minPrice.Value);
+            }
+
+            if (maxPrice.HasValue)
+            {
+                query = query.Where(p => p.Price <= maxPrice.Value);
+            }
+
+            var sortKey = string.IsNullOrWhiteSpace(sort) ? "createdat" : sort.Trim().ToLowerInvariant();
+            var sortDir = string.IsNullOrWhiteSpace(dir) ? "asc" : dir.Trim().ToLowerInvariant();
+            var descending = sortDir == "desc";
+
+            query = sortKey switch
+            {
+                "price" => descending
+                    ? query.OrderByDescending(p => p.Price)
+                    : query.OrderBy(p => p.Price),
+                "name" => descending
+                    ? query.OrderByDescending(p => p.Name)
+                    : query.OrderBy(p => p.Name),
+                "createdat" => descending
+                    ? query.OrderByDescending(p => p.CreatedAt)
+                    : query.OrderBy(p => p.CreatedAt),
+                _ => descending
+                    ? query.OrderByDescending(p => p.CreatedAt)
+                    : query.OrderBy(p => p.CreatedAt)
+            };
+
+            const int maxAllowedPageSize = 100;
+            if (pageNum < 1) pageNum = 1;
+            if (pageSize < 1) pageSize = 10;
+            pageSize = Math.Min(pageSize, maxAllowedPageSize);
+
+            var total = await query.CountAsync();
+            var items = await query
+                .Skip((pageNum - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                total,
+                pageNum,
+                pageSize,
+                items
+            });
         }
 
         [HttpGet("{id}")]
