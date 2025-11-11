@@ -3,11 +3,14 @@
         <h1>Create account</h1>
 
         <form @submit.prevent="register">
+            <label for="name">Name:</label>
+            <input id="name" v-model="form.name" type="text" required />
+
             <label for="email">Email:</label>
             <input id="email" v-model="form.email" type="email" required />
 
             <label for="password">Password:</label>
-            <input id="password" v-model="form.password" type="password" required />
+            <input id="password" v-model="form.password" type="password" required minlength="6" />
 
             <button type="submit" :disabled="loading">
                 {{ loading ? 'Registering...' : 'Register' }}
@@ -23,13 +26,26 @@
 import {reactive, ref} from 'vue';
 import api from '@/services/api';
 
-const form = reactive({
+type RegisterForm = {
+    name: string;
+    email: string;
+    password: string;
+};
+
+const form = reactive<RegisterForm>({
+    name: '',
     email: '',
     password: '',
 });
 const loading = ref(false);
 const success = ref(false);
 const error = ref('');
+
+const resetForm = () => {
+    form.name = '';
+    form.email = '';
+    form.password = '';
+};
 
 const register = async () => {
     loading.value = true;
@@ -38,12 +54,14 @@ const register = async () => {
 
     try {
         await api.post('/Users/register', {
+            name: form.name,
             email: form.email,
             password: form.password,
         });
         success.value = true;
+        resetForm();
     } catch (err: any) {
-        error.value = err.response?.data?.message || 'Registration failed.';
+        error.value = err.response?.data?.message || err.response?.data || 'Registration failed.';
     } finally {
         loading.value = false;
     }

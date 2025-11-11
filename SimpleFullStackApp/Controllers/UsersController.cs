@@ -1,70 +1,112 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using SimpleFullStackApp.Data;
+using SimpleFullStackApp.Dtos;
 using SimpleFullStackApp.Models;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace SimpleFullStackApp.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController(IConfiguration configuration, ApiDBContext dbContext) : ControllerBase
+    public class UsersController : ControllerBase
     {
-        private readonly ApiDBContext _dbContext = dbContext;
-        private readonly IConfiguration _configuration = configuration;
+        private readonly ApiDBContext _dbContext;
+        private readonly IConfiguration _configuration;
+        private readonly IPasswordHasher<User> _passwordHasher;
 
-        [HttpGet("get")]
-        [Authorize]
-        public async Task<IActionResult> Get()
+        public UsersController(
+            IConfiguration configuration,
+            ApiDBContext dbContext,
+            IPasswordHasher<User> passwordHasher)
         {
-            var userClaims = HttpContext.User?.Claims;
-            var content = userClaims?.FirstOrDefault(c => c.Type.Equals("sub", StringComparison.OrdinalIgnoreCase))?.Value;
-            var user = User.FindFirst(ClaimTypes.NameIdentifier)?.Value 
-                ?? userClaims?.FirstOrDefault(c => c.Type.Equals("sub", StringComparison.OrdinalIgnoreCase))?.Value;
-            return Ok(content);
+            _dbContext = dbContext;
+            _configuration = configuration;
+            _passwordHasher = passwordHasher;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] User user)
+        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            user.CreatedAt = DateTime.UtcNow;
-            var userData = await _dbContext.Users.Where(x => x.Email == user.Email).ToListAsync();
-            if (userData.Any())
+            if (!ModelState.IsValid)
             {
-                return Conflict($"User with email: {user.Email} already exists.");
+                return ValidationProblem(ModelState);
             }
 
+            var emailExists = await _dbContext.Users.AnyAsync(u => u.Email == request.Email);
+            if (emailExists)
+            {
+                return Conflict($"User with email: {request.Email} already exists.");
+            }
+
+            var user = new User
+            {
+                Email = request.Email,
+                Name = request.Name,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+
             _dbContext.Users.Add(user);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
+
             return StatusCode(StatusCodes.Status201Created);
         }
 
         [HttpPost("signin")]
-        public async Task<IActionResult> Login([FromBody] User user)
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            var existingUser = _dbContext.Users.Where(x => x.Email == user.Email);
-            if (existingUser == null)
-                return NotFound("User is not existed");
+            if (!ModelState.IsValid)
+            {
+                return ValidationProblem(ModelState);
+            }
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Key"]));
+            var user = await _dbContext.Users.SingleOrDefaultAsync(u => u.Email == request.Email);
+            if (user == null)
+            {
+                return NotFound("User does not exist.");
+            }
+
+            var verificationResult = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, request.Password);
+
+            if (verificationResult == PasswordVerificationResult.Failed)
+            {
+                if (user.PasswordHash == request.Password)
+                {
+                    user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+                    await _dbContext.SaveChangesAsync();
+                }
+                else
+                {
+                    return Unauthorized("Invalid credentials.");
+                }
+            }
+            else if (verificationResult == PasswordVerificationResult.SuccessRehashNeeded)
+            {
+                user.PasswordHash = _passwordHasher.HashPassword(user, request.Password);
+                await _dbContext.SaveChangesAsync();
+            }
+
+            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JWT:Key"]!));
             var signingCredentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
             var claims = new[]
             {
                 new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, existingUser.First().Name.ToString())
+                new Claim(ClaimTypes.Name, user.Name)
             };
 
             var token = new JwtSecurityToken(
                 issuer: _configuration["JWT:Issuer"],
                 audience: _configuration["JWT:Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddMinutes(60),
+                expires: DateTime.UtcNow.AddMinutes(60),
                 signingCredentials: signingCredentials);
 
             var jwtToken = new JwtSecurityTokenHandler().WriteToken(token);
@@ -77,7 +119,9 @@ namespace SimpleFullStackApp.Controllers
         {
             var email = User.FindFirstValue(ClaimTypes.Email);
             if (string.IsNullOrEmpty(email))
+            {
                 return Unauthorized();
+            }
 
             var user = await _dbContext.Users
                 .AsNoTracking()
@@ -92,23 +136,11 @@ namespace SimpleFullStackApp.Controllers
                 .FirstOrDefaultAsync();
 
             if (user == null)
+            {
                 return NotFound("User not found.");
+            }
 
             return Ok(user);
         }
-
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> Delete(int id)
-        //{
-        //    var productData = await _dbContext.Products.FindAsync(id);
-
-        //    if (productData == null)
-        //        return NotFound($"Can't find product with Id: {id}");
-
-        //    _dbContext.Products.Remove(productData);
-        //    _dbContext.SaveChanges();
-
-        //    return Ok("Product has been deleted");
-        //}
     }
 }

@@ -45,7 +45,7 @@ const login = async () => {
         setAuthToken(token);
         await router.push('/products')
     } catch (err: any) {
-        error.value = err.response?.data?.message || 'Login failed.';
+        error.value = err.response?.data?.message || err.response?.data || 'Login failed.';
     } finally {
         loading.value = false;
     }
