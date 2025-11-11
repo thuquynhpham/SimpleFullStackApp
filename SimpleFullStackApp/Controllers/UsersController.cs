@@ -14,17 +14,10 @@ namespace SimpleFullStackApp.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class UsersController(IConfiguration configuration) : ControllerBase
+    public class UsersController(IConfiguration configuration, ApiDBContext dbContext) : ControllerBase
     {
-        ApiDBContext _dbContext = new ApiDBContext();
+        private readonly ApiDBContext _dbContext = dbContext;
         private readonly IConfiguration _configuration = configuration;
-
-        //[HttpGet]
-        //public async Task<IActionResult> GetAll()
-        //{
-        //    var products = await _dbContext.Products.ToListAsync();
-        //    return Ok(products);
-        //}
 
         [HttpGet("get")]
         [Authorize]

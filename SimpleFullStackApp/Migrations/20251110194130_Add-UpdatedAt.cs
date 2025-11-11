@@ -14,13 +14,11 @@ namespace SimpleFullStackApp.Migrations
             migrationBuilder.AddColumn<DateTime>(
                 name: "UpdateAt",
                 table: "StockMovement",
-                type: "datetime2",
                 nullable: true);
 
             migrationBuilder.AddColumn<DateTime>(
                 name: "UpdatedAt",
                 table: "Products",
-                type: "datetime2",
                 nullable: true);
         }
 

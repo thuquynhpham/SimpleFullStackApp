@@ -11,7 +11,12 @@ namespace SimpleFullStackApp.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        ApiDBContext _dbContext = new ApiDBContext();
+        private readonly ApiDBContext _dbContext;
+
+        public ProductsController(ApiDBContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
 
         [HttpGet]
         [Authorize]

@@ -1,18 +1,15 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SimpleFullStackApp.Models;
-using System.Data;
-
 namespace SimpleFullStackApp.Data
 {
-    public class ApiDBContext: DbContext
+    public class ApiDBContext : DbContext
     {
         public DbSet<Product> Products { get; set; }
         public DbSet<StockMovement> StockMovement { get; set; }
         public DbSet<User> Users { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        public ApiDBContext(DbContextOptions<ApiDBContext> options) : base(options)
         {
-            optionsBuilder.UseSqlServer(@"Server=(localdb)\MSSQLLocalDB;DataBase=StockMovement");
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -14,20 +14,19 @@ namespace SimpleFullStackApp.Migrations
             migrationBuilder.AlterColumn<string>(
                 name: "SKU",
                 table: "Products",
-                type: "nvarchar(450)",
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(max)");
+                oldNullable: false);
 
             migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
-                    UserId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Password = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Email = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    UserId = table.Column<int>(nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Password = table.Column<string>(nullable: false),
+                    Email = table.Column<string>(nullable: false),
+                    CreatedAt = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -54,10 +53,9 @@ namespace SimpleFullStackApp.Migrations
             migrationBuilder.AlterColumn<string>(
                 name: "SKU",
                 table: "Products",
-                type: "nvarchar(max)",
                 nullable: false,
                 oldClrType: typeof(string),
-                oldType: "nvarchar(450)");
+                oldNullable: false);
         }
     }
 }
