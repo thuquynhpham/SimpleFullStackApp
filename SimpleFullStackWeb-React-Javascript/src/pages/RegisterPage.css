@@ -1,0 +1,82 @@
+.register-page {
+  max-width: 420px;
+  margin: 40px auto;
+  padding: 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.register-page h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.register-subtitle {
+  margin: 0;
+  color: #4b5563;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.register-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.register-form input {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.register-form button {
+  margin-top: 8px;
+  padding: 10px 12px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.register-form button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.field-error {
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.status-message {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.status-message--success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.status-message--error {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.register-footer {
+  margin: 0;
+  color: #4b5563;
+}
+

@@ -32,7 +32,7 @@ namespace SimpleFullStackApp.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest request)
+        public async Task<IActionResult> Register([FromBody] RegisterRequestDto request)
         {
             if (!ModelState.IsValid)
             {
@@ -61,7 +61,7 @@ namespace SimpleFullStackApp.Controllers
         }
 
         [HttpPost("signin")]
-        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        public async Task<IActionResult> Login([FromBody] LoginRequestDto request)
         {
             if (!ModelState.IsValid)
             {

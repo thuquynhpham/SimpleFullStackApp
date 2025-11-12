@@ -1,0 +1,153 @@
+.products-page {
+  min-height: calc(100vh - 40px);
+  margin: 20px;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  grid-template-rows: auto 1fr;
+  gap: 24px;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.12);
+}
+
+.products-page header {
+  grid-column: 1 / -1;
+  margin-bottom: 8px;
+}
+
+.products-page h1 {
+  margin: 0;
+  font-size: 2.2rem;
+}
+
+.products-subtitle {
+  margin: 4px 0 0;
+  color: #4b5563;
+}
+
+.products-search {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.products-search label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.products-search input {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.products-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.products-form h2 {
+  margin: 0;
+}
+
+.products-form form {
+  display: grid;
+  gap: 12px;
+}
+
+.products-form form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.products-form form input {
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.products-form form button {
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.products-error {
+  margin: 0;
+  color: #b91c1c;
+  font-size: 0.9rem;
+}
+
+.products-status {
+  margin: 4px 0 0;
+  color: #166534;
+  font-size: 0.9rem;
+}
+
+.products-table {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+}
+
+.products-table h2 {
+  margin: 0 0 12px;
+}
+
+.products-table table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px #e2e8f0;
+}
+
+.products-table th,
+.products-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 12px 14px;
+  text-align: left;
+}
+
+.products-table th {
+  background: #f8fafc;
+}
+
+.products-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.products-empty {
+  margin: 0;
+  color: #4b5563;
+}
+
+.products-loading {
+  margin: 0;
+  color: #4b5563;
+}
+
+@media (max-width: 900px) {
+  .products-page {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    gap: 20px;
+  }
+
+  .products-table {
+    grid-column: 1;
+  }
+}
+
