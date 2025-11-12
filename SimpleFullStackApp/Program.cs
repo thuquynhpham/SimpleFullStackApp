@@ -6,6 +6,7 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using SimpleFullStackApp.Data;
 using SimpleFullStackApp.Models;
+using SimpleFullStackApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -87,6 +88,8 @@ builder.Services.AddCors(options =>
 #endregion
 
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+builder.Services.AddScoped<IProductService, ProductsService>();
+
 
 var app = builder.Build();
 

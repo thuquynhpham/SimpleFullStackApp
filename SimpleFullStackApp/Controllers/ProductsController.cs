@@ -1,9 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SimpleFullStackApp.Data;
 using SimpleFullStackApp.Models;
+using SimpleFullStackApp.Services;
 
 namespace SimpleFullStackApp.Controllers
 {
@@ -11,11 +9,11 @@ namespace SimpleFullStackApp.Controllers
     [ApiController]
     public class ProductsController : ControllerBase
     {
-        private readonly ApiDBContext _dbContext;
+        private readonly IProductService _productService;
 
-        public ProductsController(ApiDBContext dbContext)
+        public ProductsController(IProductService productService)
         {
-            _dbContext = dbContext;
+            _productService = productService;
         }
 
         [HttpGet]
@@ -29,129 +27,73 @@ namespace SimpleFullStackApp.Controllers
             [FromQuery] int pageNum = 1,
             [FromQuery] int pageSize = 10)
         {
-            var query = _dbContext.Products.AsQueryable();
+            var productsPagingDto = await _productService.GetAllProducts(q, minPrice, maxPrice, sort, dir, pageNum, pageSize);
 
-            if (!string.IsNullOrWhiteSpace(q))
-            {
-                var pattern = $"%{q.Trim()}%";
-                query = query.Where(p =>
-                    EF.Functions.Like(p.SKU, pattern) ||
-                    EF.Functions.Like(p.Name, pattern));
-            }
-
-            if (minPrice.HasValue)
-            {
-                query = query.Where(p => p.Price >= minPrice.Value);
-            }
-
-            if (maxPrice.HasValue)
-            {
-                query = query.Where(p => p.Price <= maxPrice.Value);
-            }
-
-            var sortKey = string.IsNullOrWhiteSpace(sort) ? "createdat" : sort.Trim().ToLowerInvariant();
-            var sortDir = string.IsNullOrWhiteSpace(dir) ? "asc" : dir.Trim().ToLowerInvariant();
-            var descending = sortDir == "desc";
-
-            query = sortKey switch
-            {
-                "price" => descending
-                    ? query.OrderByDescending(p => p.Price)
-                    : query.OrderBy(p => p.Price),
-                "name" => descending
-                    ? query.OrderByDescending(p => p.Name)
-                    : query.OrderBy(p => p.Name),
-                "createdat" => descending
-                    ? query.OrderByDescending(p => p.CreatedAt)
-                    : query.OrderBy(p => p.CreatedAt),
-                _ => descending
-                    ? query.OrderByDescending(p => p.CreatedAt)
-                    : query.OrderBy(p => p.CreatedAt)
-            };
-
-            const int maxAllowedPageSize = 100;
-            if (pageNum < 1) pageNum = 1;
-            if (pageSize < 1) pageSize = 10;
-            pageSize = Math.Min(pageSize, maxAllowedPageSize);
-
-            var total = await query.CountAsync();
-            var items = await query
-                .Skip((pageNum - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
-
-            return Ok(new
-            {
-                total,
-                pageNum,
-                pageSize,
-                items
-            });
+            return Ok(productsPagingDto);
         }
 
         [HttpGet("{id}")]
         [Authorize]
         public async Task<IActionResult> Get(int id)
         {
-            var productData = await _dbContext.Products.FindAsync(id);
-
-            if (productData == null)
-                return NotFound($"Can't find product with Id: {id}");
-
-            return Ok(productData);
+            try
+            {
+                var productData = await _productService.GetProduct(id);
+                return Ok(productData);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
 
         [HttpPost]
         [Authorize]
         public IActionResult Post([FromBody] Product product)
         {
-            product.CreatedAt = DateTime.UtcNow;
-            var productData = _dbContext.Products.Where(x => x.SKU == product.SKU);
-            if (productData.Any())
+            try
             {
-                return Conflict($"Product with SKU: {product.SKU} already exists.");
+                _productService.AddProduct(product);
+                return StatusCode(StatusCodes.Status201Created);
             }
-
-            _dbContext.Products.Add(product);
-            _dbContext.SaveChanges();
-            return StatusCode(StatusCodes.Status201Created);
+            catch (InvalidDataException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
 
         [HttpPut("{id}")]
         [Authorize]
         public async Task<IActionResult> Put(int id, [FromBody] Product product)
         {
-            var productData = await _dbContext.Products.FindAsync(id);
-            if (productData == null)
-                return NotFound($"Can't find product with Id: {id}");
-
-            if(_dbContext.Products.Any(x => x.SKU == product.SKU))
-                return Conflict($"Product with SKU: {product.SKU} already exists.");
-
-            productData.SKU = product.SKU;
-            productData.Quantity = product.Quantity;
-            productData.Price = product.Price;
-            productData.Name = product.Name;
-            productData.UpdatedAt = DateTime.UtcNow;
-
-            _dbContext.SaveChanges();
-
-            return Ok("Product has been updated");
+            try
+            {
+                await _productService.UpdateProduct(id, product);
+                return Ok("Product has been updated");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (InvalidDataException ex)
+            {
+                return Conflict(ex.Message);
+            }
         }
 
         [HttpDelete("{id}")]
         [Authorize]
         public async Task<IActionResult> Delete(int id)
         {
-            var productData = await _dbContext.Products.FindAsync(id);
-
-            if (productData == null)
-                return NotFound($"Can't find product with Id: {id}");
-
-            _dbContext.Products.Remove(productData);
-            _dbContext.SaveChanges();
-
-            return Ok("Product has been deleted");
+            try
+            {
+                await _productService.DeleteProduct(id);
+                return Ok("Product has been deleted");
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
         }
     }
 }
