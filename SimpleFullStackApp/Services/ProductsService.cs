@@ -1,5 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SimpleFullStackApp.Data;
 using SimpleFullStackApp.Dtos;
 using SimpleFullStackApp.Models;
@@ -17,8 +16,8 @@ namespace SimpleFullStackApp.Services
             int pageNum = 1,
             int pageSize = 10);
         Task<Product> GetProduct(int id);
-        void AddProduct([FromBody] Product product);
-        Task UpdateProduct(int id, [FromBody] Product product);
+        Task AddProduct(Product product);
+        Task UpdateProduct(int id, Product product);
         Task DeleteProduct(int id);
     }
 
@@ -92,10 +91,10 @@ namespace SimpleFullStackApp.Services
 
             return new ProductsPagingDto
             {
-                TotalCount = total,
+                Total = total,
                 PageNum = pageNum,
                 PageSize = pageSize,
-                Products = items
+                Items = items
             };
         }
 
@@ -109,27 +108,39 @@ namespace SimpleFullStackApp.Services
             return productData;
         }
 
-        public void AddProduct([FromBody] Product product)
+        public async Task AddProduct(Product product)
         {
+            if (product == null)
+                throw new ArgumentNullException(nameof(product));
+
             product.CreatedAt = DateTime.UtcNow;
-            var productData = _dbContext.Products.Where(x => x.SKU == product.SKU);
-            if (productData.Any())
+            
+            var skuExists = await _dbContext.Products.AnyAsync(x => x.SKU == product.SKU);
+            if (skuExists)
             {
                 throw new InvalidDataException($"Product with SKU: {product.SKU} already exists.");
             }
 
             _dbContext.Products.Add(product);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
         }
 
-        public async Task UpdateProduct(int id, [FromBody] Product product)
+        public async Task UpdateProduct(int id, Product product)
         {
+            if (product == null)
+                throw new ArgumentNullException(nameof(product));
+
             var productData = await _dbContext.Products.FindAsync(id);
             if (productData == null)
                 throw new KeyNotFoundException($"Can't find product with Id: {id}");
 
-            if (_dbContext.Products.Any(x => x.SKU == product.SKU))
-                throw new InvalidDataException($"Product with SKU: {product.SKU} already exists.");
+            // Check if SKU is being changed and if the new SKU already exists (excluding current product)
+            if (productData.SKU != product.SKU)
+            {
+                var skuExists = await _dbContext.Products.AnyAsync(x => x.SKU == product.SKU && x.ProductId != id);
+                if (skuExists)
+                    throw new InvalidDataException($"Product with SKU: {product.SKU} already exists.");
+            }
 
             productData.SKU = product.SKU;
             productData.Quantity = product.Quantity;
@@ -137,7 +148,7 @@ namespace SimpleFullStackApp.Services
             productData.Name = product.Name;
             productData.UpdatedAt = DateTime.UtcNow;
 
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
         }
 
         public async Task DeleteProduct(int id)
@@ -148,7 +159,7 @@ namespace SimpleFullStackApp.Services
                 throw new KeyNotFoundException($"Can't find product with Id: {id}");
 
             _dbContext.Products.Remove(productData);
-            _dbContext.SaveChanges();
+            await _dbContext.SaveChangesAsync();
         }
 
     }

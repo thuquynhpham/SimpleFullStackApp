@@ -49,11 +49,11 @@ namespace SimpleFullStackApp.Controllers
 
         [HttpPost]
         [Authorize]
-        public IActionResult Post([FromBody] Product product)
+        public async Task<IActionResult> Post([FromBody] Product product)
         {
             try
             {
-                _productService.AddProduct(product);
+                await _productService.AddProduct(product);
                 return StatusCode(StatusCodes.Status201Created);
             }
             catch (InvalidDataException ex)

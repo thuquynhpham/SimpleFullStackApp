@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import axios from 'axios';
+import api from '../services/api';
 import './ProductsPage.css';
 
 const emptyForm = {
@@ -10,7 +10,6 @@ const emptyForm = {
 };
 
 const ProductsPage = () => {
-  const API_BASE_URL = 'https://localhost:7279/api';
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
@@ -34,7 +33,7 @@ const ProductsPage = () => {
     setLoading(true);
     setError('');
     try {
-      const { data } = await axios.get(`${API_BASE_URL}/Products`);
+      const { data } = await api.get('/Products');
       const items = Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [];
       setProducts(items);
     } catch (err) {
@@ -91,7 +90,7 @@ const ProductsPage = () => {
     try {
       setError('');
       setSubmitStatus('Saving…');
-      await axios.post(`${API_BASE_URL}/Products`, nextProduct);
+      await api.post('/Products', nextProduct);
       setForm(emptyForm);
       setSubmitStatus('Product saved successfully.');
       await fetchProducts();

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import api, { setAuthToken } from '../services/api';
 import './LoginPage.css';
 
 const initialFormState = {
@@ -52,8 +53,14 @@ const LoginPage = () => {
 
     try {
       setStatus({ type: 'loading', message: '' });
-      // Simulate network request
-      await new Promise((resolve) => setTimeout(resolve, 600));
+      
+      const { data } = await api.post('/Users/signin', {
+        email: form.email,
+        password: form.password,
+      });
+
+      const token = data;
+      setAuthToken(token);
 
       setStatus({ type: null, message: '' });
       setForm(initialFormState);
@@ -62,7 +69,7 @@ const LoginPage = () => {
     } catch (err) {
       setStatus({
         type: 'error',
-        message: err?.message || 'Unable to sign in right now. Try again later.',
+        message: err?.response?.data?.message || err?.response?.data || 'Unable to sign in right now. Try again later.',
       });
     }
   };
