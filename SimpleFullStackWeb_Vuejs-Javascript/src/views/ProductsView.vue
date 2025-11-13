@@ -11,7 +11,7 @@
     </header>
 
     <section class="card filters-grid">
-      <div class="form__field">
+      <div class="form__field form__field--wide">
         <label class="form__label" for="search">Search</label>
         <input
           id="search"
@@ -377,22 +377,3 @@ const confirmDelete = async () => {
 
 onMounted(loadProducts);
 </script>
-
-<style scoped>
-.page {
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.filters-grid {
-  margin-bottom: 12px;
-}
-
-.table-wrapper {
-  margin-top: 12px;
-}
-
-.pagination {
-  margin-top: 12px;
-}
-</style>

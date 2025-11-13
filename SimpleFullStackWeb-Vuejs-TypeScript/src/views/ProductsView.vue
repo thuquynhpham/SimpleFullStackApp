@@ -3,7 +3,7 @@
     <header class="section-header">
       <h1>Products</h1>
       <div class="section-actions">
-        <button class="btn btn--secondary btn--sm" type="button">Add Product</button>
+        <button class="btn btn--secondary btn--sm" type="button" @click="startAdd">Add Product</button>
         <button class="btn btn--ghost btn--sm" type="button" @click="loadProducts" :disabled="loading">
           {{ loading ? 'Refreshing…' : 'Refresh' }}
         </button>
@@ -11,7 +11,7 @@
     </header>
 
     <section class="card filters-grid">
-      <div class="form__field">
+      <div class="form__field form__field--wide">
         <label class="form__label" for="search">Search</label>
         <input
           id="search"
@@ -94,8 +94,8 @@
             <td class="table__numeric">{{ product.price.toFixed(2) }}</td>
             <td class="table__numeric">{{ product.quantity }}</td>
             <td class="table__actions">
-              <button class="btn btn--ghost btn--sm" type="button">Edit</button>
-              <button class="btn btn--danger btn--sm" type="button">Delete</button>
+              <button class="btn btn--ghost btn--sm" type="button" @click="startEdit(product)">Edit</button>
+              <button class="btn btn--danger btn--sm" type="button" @click="startDelete(product)">Delete</button>
             </td>
           </tr>
         </tbody>
@@ -123,11 +123,32 @@
       </div>
     </footer>
   </section>
+
+  <ProductFormModal
+    :visible="showForm"
+    :initial-product="editingProduct"
+    :loading="formLoading"
+    :error="formError"
+    :title="editingProduct ? 'Edit Product' : 'Add Product'"
+    @cancel="cancelForm"
+    @submit="handleSubmit"
+  />
+  <ConfirmDialog
+    :visible="showDeleteConfirm"
+    title="Delete Product"
+    :message="deleteMessage"
+    :loading="deleteLoading"
+    :error="deleteError"
+    @cancel="cancelDelete"
+    @confirm="confirmDelete"
+  />
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue';
 import api from '@/services/api';
+import ProductFormModal from '@/components/ProductFormModal.vue';
+import ConfirmDialog from '@/components/ConfirmDialog.vue';
 
 type Product = {
   productId: number;
@@ -146,9 +167,31 @@ type ProductsResponse = {
   total: number;
 };
 
+type ProductPayload = {
+  sku: string;
+  name: string;
+  price: number;
+  quantity: number;
+};
+
+type ApiError = {
+  response?: {
+    data?: unknown;
+    message?: string;
+  };
+};
+
 const products = ref<Product[]>([]);
 const loading = ref(false);
 const error = ref('');
+const formError = ref('');
+const formLoading = ref(false);
+const showForm = ref(false);
+const editingProduct = ref<Product | null>(null);
+const showDeleteConfirm = ref(false);
+const deletingProduct = ref<Product | null>(null);
+const deleteLoading = ref(false);
+const deleteError = ref('');
 
 const state = reactive({
   pageNum: 1,
@@ -160,11 +203,9 @@ const search = ref('');
 const minPrice = ref('');
 const maxPrice = ref('');
 const sortBy = ref<'createdAt' | 'name' | 'price'>('createdAt');
-const sortDir = ref<'asc' | 'desc'>('asc');
+const sortDir = ref<'asc' | 'desc'>('desc');
 
-const totalPages = computed(() =>
-  Math.max(1, Math.ceil(state.total / state.pageSize))
-);
+const totalPages = computed(() => Math.max(1, Math.ceil(state.total / state.pageSize)));
 
 const buildParams = () => {
   const params: Record<string, string | number> = {
@@ -204,11 +245,20 @@ const loadProducts = async () => {
     state.total = data?.total ?? 0;
     state.pageNum = data?.pageNum ?? 1;
     state.pageSize = data?.pageSize ?? state.pageSize;
-  } catch (err: any) {
-    error.value =
-      err.response?.data?.message ||
-      err.response?.data ||
-      'Failed to load products.';
+  } catch (err) {
+    const typedError = err as ApiError;
+    if (typedError.response?.data) {
+      const data = typedError.response.data as { message?: string } | string;
+      if (typeof data === 'string') {
+        error.value = data;
+      } else if (data.message) {
+        error.value = data.message;
+      } else {
+        error.value = 'Failed to load products.';
+      }
+    } else {
+      error.value = 'Failed to load products.';
+    }
   } finally {
     loading.value = false;
   }
@@ -251,6 +301,135 @@ const pageSize = computed({
   },
 });
 const total = computed(() => state.total);
+
+const startAdd = () => {
+  editingProduct.value = null;
+  formError.value = '';
+  showForm.value = true;
+};
+
+const startEdit = (product: Product) => {
+  editingProduct.value = product;
+  formError.value = '';
+  showForm.value = true;
+};
+
+const startDelete = (product: Product) => {
+  deletingProduct.value = product;
+  deleteError.value = '';
+  showDeleteConfirm.value = true;
+};
+
+const cancelForm = () => {
+  showForm.value = false;
+  editingProduct.value = null;
+  formError.value = '';
+  formLoading.value = false;
+};
+
+const cancelDelete = () => {
+  showDeleteConfirm.value = false;
+  deletingProduct.value = null;
+  deleteError.value = '';
+  deleteLoading.value = false;
+};
+
+const deleteMessage = computed(() => {
+  if (!deletingProduct.value) return '';
+  const { name, sku } = deletingProduct.value;
+  if (name && sku) return `Delete product "${name}" (SKU: ${sku})?`;
+  if (name) return `Delete product "${name}"?`;
+  if (sku) return `Delete product with SKU ${sku}?`;
+  return 'Delete this product?';
+});
+
+const handleSubmit = async (payload: ProductPayload) => {
+  formError.value = '';
+  formLoading.value = true;
+
+  const request: ProductPayload = {
+    sku: typeof payload.sku === 'string' ? payload.sku.trim() : '',
+    name: typeof payload.name === 'string' ? payload.name.trim() : '',
+    price: Number(payload.price),
+    quantity: Number(payload.quantity),
+  };
+
+  if (!request.sku || !request.name) {
+    formError.value = 'SKU and Name are required.';
+    formLoading.value = false;
+    return;
+  }
+
+  if (Number.isNaN(request.price) || request.price < 0) {
+    formError.value = 'Price must be a positive number.';
+    formLoading.value = false;
+    return;
+  }
+
+  if (!Number.isInteger(request.quantity) || request.quantity < 0) {
+    formError.value = 'Quantity must be a whole number.';
+    formLoading.value = false;
+    return;
+  }
+
+  try {
+    if (editingProduct.value) {
+      await api.put(`/Products/${editingProduct.value.productId}`, request);
+    } else {
+      await api.post('/Products', request);
+    }
+    cancelForm();
+    await loadProducts();
+  } catch (err) {
+    const typedError = err as ApiError;
+    if (typedError.response?.data) {
+      const data = typedError.response.data as { message?: string } | string;
+      if (typeof data === 'string') {
+        formError.value = data;
+      } else if (data.message) {
+        formError.value = data.message;
+      } else {
+        formError.value = 'Something went wrong.';
+      }
+    } else {
+      formError.value = 'Something went wrong.';
+    }
+  } finally {
+    formLoading.value = false;
+  }
+};
+
+const confirmDelete = async () => {
+  if (!deletingProduct.value) {
+    deleteError.value = 'No product selected.';
+    return;
+  }
+
+  deleteError.value = '';
+  deleteLoading.value = true;
+
+  try {
+    await api.delete(`/Products/${deletingProduct.value.productId}`);
+    cancelDelete();
+    await loadProducts();
+  } catch (err) {
+    const typedError = err as ApiError;
+    if (typedError.response?.data) {
+      const data = typedError.response.data as { message?: string } | string;
+      if (typeof data === 'string') {
+        deleteError.value = data;
+      } else if (data.message) {
+        deleteError.value = data.message;
+      } else {
+        deleteError.value = 'Failed to delete product.';
+      }
+    } else {
+      deleteError.value = 'Failed to delete product.';
+    }
+  } finally {
+    deleteLoading.value = false;
+  }
+};
 
 onMounted(loadProducts);
 </script>

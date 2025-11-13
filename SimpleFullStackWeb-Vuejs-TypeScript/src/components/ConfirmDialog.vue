@@ -19,31 +19,19 @@
   </div>
 </template>
 
-<script setup>
-const props = defineProps({
-  visible: {
-    type: Boolean,
-    default: false,
-  },
-  title: {
-    type: String,
-    default: 'Confirm',
-  },
-  message: {
-    type: String,
-    default: '',
-  },
-  loading: {
-    type: Boolean,
-    default: false,
-  },
-  error: {
-    type: String,
-    default: '',
-  },
-});
+<script setup lang="ts">
+const props = defineProps<{
+  visible: boolean;
+  title: string;
+  message: string;
+  loading: boolean;
+  error: string;
+}>();
 
-const emit = defineEmits(['confirm', 'cancel']);
+const emit = defineEmits<{
+  (e: 'confirm'): void;
+  (e: 'cancel'): void;
+}>();
 
 const emitConfirm = () => emit('confirm');
 const emitCancel = () => emit('cancel');
@@ -123,5 +111,3 @@ const emitCancel = () => emit('cancel');
   }
 }
 </style>
-
-

@@ -25,35 +25,82 @@
 </template>
 
 <script setup lang="ts">
-import {reactive, ref} from 'vue';
-import api, { setAuthToken } from '@/services/api';
+import { reactive, ref } from 'vue';
 import { useRouter } from 'vue-router';
+import api, { setAuthToken } from '@/services/api';
+
+type SignInResponse = string | { token?: string; Token?: string };
+
+type ApiError = {
+  response?: {
+    status: number;
+    statusText: string;
+    data?: unknown;
+  };
+  request?: unknown;
+  message?: string;
+};
 
 const router = useRouter();
 const form = reactive({
-    email: '',
-    password: '',
+  email: '',
+  password: '',
 });
 const loading = ref(false);
 const error = ref('');
 
 const login = async () => {
-    loading.value = true;
-    error.value = '';
+  loading.value = true;
+  error.value = '';
 
-    try {
-        const {data} = await api.post('/Users/signin', {
-            email: form.email,
-            password: form.password,
-        });
+  try {
+    const response = await api.post<SignInResponse>('/Users/signin', {
+      email: form.email,
+      password: form.password,
+    });
 
-        const token = data;
-        setAuthToken(token);
-        await router.push('/products');
-    } catch (err: any) {
-        error.value = err.response?.data?.message || err.response?.data || 'Login failed.';
-    } finally {
-        loading.value = false;
+    let token: unknown = response.data;
+
+    if (typeof token === 'string') {
+      if (token.startsWith('"') && token.endsWith('"')) {
+        token = JSON.parse(token);
+      }
+    } else if (token && typeof token === 'object') {
+      const tokenCandidate = (token as { token?: string; Token?: string }).token ?? (
+        token as { token?: string; Token?: string }
+      ).Token;
+      token = tokenCandidate;
     }
+
+    if (typeof token !== 'string' || !token) {
+      console.error('Invalid token format:', token);
+      throw new Error('Invalid token received from server');
+    }
+
+    setAuthToken(token);
+    await router.push('/products');
+  } catch (err) {
+    console.error('Login error:', err);
+    const typedError = err as ApiError;
+
+    if (typedError.response) {
+      const { data, status, statusText } = typedError.response;
+      if (typeof data === 'string') {
+        error.value = data;
+      } else if (data && typeof (data as { message?: string }).message === 'string') {
+        error.value = (data as { message: string }).message;
+      } else if (data && typeof (data as { title?: string }).title === 'string') {
+        error.value = (data as { title: string }).title;
+      } else {
+        error.value = `Login failed: ${status} ${statusText}`;
+      }
+    } else if (typedError.request) {
+      error.value = 'Unable to connect to server. Please check your connection.';
+    } else {
+      error.value = typedError.message || 'Login failed. Please try again.';
+    }
+  } finally {
+    loading.value = false;
+  }
 };
 </script>

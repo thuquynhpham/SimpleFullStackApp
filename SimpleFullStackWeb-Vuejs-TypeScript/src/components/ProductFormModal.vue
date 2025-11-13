@@ -52,35 +52,37 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { reactive, watch } from 'vue';
 
-const props = defineProps({
-  visible: {
-    type: Boolean,
-    default: false,
-  },
-  initialProduct: {
-    type: Object,
-    default: null,
-  },
-  loading: {
-    type: Boolean,
-    default: false,
-  },
-  error: {
-    type: String,
-    default: '',
-  },
-  title: {
-    type: String,
-    default: 'Product Form',
-  },
-});
+type Product = {
+  sku?: string;
+  name?: string;
+  price?: number | string;
+  quantity?: number | string;
+};
 
-const emit = defineEmits(['cancel', 'submit']);
+type ProductForm = {
+  sku: string;
+  name: string;
+  price: number;
+  quantity: number;
+};
 
-const form = reactive({
+const props = defineProps<{
+  visible: boolean;
+  initialProduct: Product | null;
+  loading: boolean;
+  error: string;
+  title: string;
+}>();
+
+const emit = defineEmits<{
+  (e: 'cancel'): void;
+  (e: 'submit', payload: ProductForm): void;
+}>();
+
+const form = reactive<ProductForm>({
   sku: '',
   name: '',
   price: 0,
@@ -96,7 +98,7 @@ const resetForm = () => {
 
 watch(
   () => props.visible,
-  visible => {
+  (visible) => {
     if (visible) {
       if (props.initialProduct) {
         form.sku = props.initialProduct.sku ?? '';
@@ -112,7 +114,7 @@ watch(
 
 watch(
   () => props.initialProduct,
-  product => {
+  (product) => {
     if (props.visible && product) {
       form.sku = product.sku ?? '';
       form.name = product.name ?? '';
@@ -123,14 +125,12 @@ watch(
 );
 
 const handleSubmit = () => {
-  const payload = {
+  emit('submit', {
     sku: form.sku.trim(),
     name: form.name.trim(),
     price: Number(form.price),
     quantity: Number(form.quantity),
-  };
-
-  emit('submit', payload);
+  });
 };
 
 const handleCancel = () => {
@@ -209,5 +209,3 @@ const handleCancel = () => {
   }
 }
 </style>
-
-

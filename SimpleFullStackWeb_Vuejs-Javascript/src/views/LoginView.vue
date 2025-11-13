@@ -42,16 +42,50 @@ const login = async () => {
     error.value = '';
 
     try {
-        const { data } = await api.post('/Users/signin', {
+        const response = await api.post('/Users/signin', {
             email: form.email,
             password: form.password,
         });
 
-        const token = data;
+        // The backend returns the token as a plain string
+        // axios automatically parses JSON, so if it's a JSON string, it will be parsed
+        let token = response.data;
+        
+        // Handle case where token might be wrapped in quotes (JSON string)
+        if (typeof token === 'string' && token.startsWith('"') && token.endsWith('"')) {
+            token = JSON.parse(token);
+        }
+        
+        if (!token || typeof token !== 'string') {
+            console.error('Invalid token format:', token);
+            throw new Error('Invalid token received from server');
+        }
+
         setAuthToken(token);
         await router.push('/products');
     } catch (err) {
-        error.value = err?.response?.data?.message || err?.response?.data || 'Login failed.';
+        console.error('Login error:', err);
+        
+        // Better error message handling
+        if (err.response) {
+            // Server responded with error
+            const errorData = err.response.data;
+            if (typeof errorData === 'string') {
+                error.value = errorData;
+            } else if (errorData?.message) {
+                error.value = errorData.message;
+            } else if (errorData?.title) {
+                error.value = errorData.title;
+            } else {
+                error.value = `Login failed: ${err.response.status} ${err.response.statusText}`;
+            }
+        } else if (err.request) {
+            // Request made but no response
+            error.value = 'Unable to connect to server. Please check your connection.';
+        } else {
+            // Error setting up request
+            error.value = err.message || 'Login failed. Please try again.';
+        }
     } finally {
         loading.value = false;
     }

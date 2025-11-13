@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import api from '@/services/api';
+import { computed, onMounted, ref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import api, { setAuthToken } from '@/services/api';
 
 type UserProfile = {
   userId: number;
@@ -14,6 +14,7 @@ type UserProfile = {
 const profile = ref<UserProfile | null>(null);
 const loadingProfile = ref(false);
 const route = useRoute();
+const router = useRouter();
 
 const loadProfile = async () => {
   const token = localStorage.getItem('authToken');
@@ -41,19 +42,31 @@ watch(
     loadProfile();
   }
 );
+
+const isAuthenticated = computed(() => !!profile.value);
+
+const logout = async () => {
+  setAuthToken(null);
+  profile.value = null;
+  await router.push('/login');
+};
 </script>
 
 <template>
   <div class="app-shell">
     <header class="navbar">
-      <h1 class="navbar__brand">Stock Movement App</h1>
+      <div class="navbar__group navbar__group--left">
+        <h1 class="navbar__brand">Products App</h1>
+        <RouterLink to="/products" class="btn">Products</RouterLink>
+      </div>
       <nav class="navbar__links">
         <span v-if="loadingProfile" class="navbar__greeting text-muted">Loading…</span>
         <span v-else-if="profile" class="navbar__greeting">
           Hello! {{ profile.name || profile.email }}<span v-if="profile.role"> ({{ profile.role }})</span>
         </span>
         <RouterLink to="/register" class="btn btn--primary">Register</RouterLink>
-        <RouterLink to="/products" class="btn">Products</RouterLink>
+        <RouterLink v-if="!isAuthenticated" to="/login" class="btn">Login</RouterLink>
+        <button v-else class="btn" type="button" @click="logout">Logout</button>
       </nav>
     </header>
 

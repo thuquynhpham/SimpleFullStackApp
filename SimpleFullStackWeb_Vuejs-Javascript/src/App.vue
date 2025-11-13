@@ -48,7 +48,7 @@ const logout = async () => {
   <div class="app-shell">
     <header class="navbar">
       <div class="navbar__group navbar__group--left">
-        <h1 class="navbar__brand">Stock Movement App</h1>
+        <h1 class="navbar__brand">Products App</h1>
         <RouterLink to="/products" class="btn">Products</RouterLink>
       </div>
       <nav class="navbar__links">
