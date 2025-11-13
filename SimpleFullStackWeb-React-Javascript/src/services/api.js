@@ -6,18 +6,36 @@ const api = axios.create({
   baseURL: API_BASE_URL,
 });
 
-// Function to set auth token
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    });
+    return Promise.reject(error);
+  }
+);
+
 export const setAuthToken = (token) => {
   if (token) {
-    api.defaults.headers.common.Authorization = `Bearer ${token}`;
-    localStorage.setItem('authToken', token);
-  } else {
-    delete api.defaults.headers.common.Authorization;
-    localStorage.removeItem('authToken');
+    const cleanToken =
+      typeof token === 'string' && token.startsWith('"') && token.endsWith('"')
+        ? JSON.parse(token)
+        : token;
+
+    api.defaults.headers.common.Authorization = `Bearer ${cleanToken}`;
+    localStorage.setItem('authToken', cleanToken);
+    return;
   }
+
+  delete api.defaults.headers.common.Authorization;
+  localStorage.removeItem('authToken');
 };
 
-// Load token from localStorage on initialization
 const token = localStorage.getItem('authToken');
 if (token) {
   setAuthToken(token);

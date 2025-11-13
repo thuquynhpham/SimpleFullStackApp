@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import api from '../services/api';
 import './RegisterPage.css';
 
 const initialFormState = {
@@ -29,6 +30,35 @@ const validate = ({ name, email, password }) => {
   return errors;
 };
 
+const getErrorMessage = (error) => {
+  if (!error) return 'Registration failed. Please try again.';
+  const { response, request, message } = error;
+
+  if (response) {
+    const { data, status, statusText } = response;
+
+    if (typeof data === 'string') {
+      return data;
+    }
+
+    if (data && typeof data.message === 'string') {
+      return data.message;
+    }
+
+    if (data && typeof data.title === 'string') {
+      return data.title;
+    }
+
+    return `Registration failed: ${status} ${statusText}`;
+  }
+
+  if (request) {
+    return 'Unable to connect to server. Please check your connection.';
+  }
+
+  return message || 'Registration failed. Please try again.';
+};
+
 const RegisterPage = () => {
   const [form, setForm] = useState(initialFormState);
   const [status, setStatus] = useState({ type: null, message: '' });
@@ -57,8 +87,12 @@ const RegisterPage = () => {
 
     try {
       setStatus({ type: 'loading', message: '' });
-      // Simulate network request
-      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      await api.post('/Users/register', {
+        name: form.name,
+        email: form.email,
+        password: form.password,
+      });
 
       setStatus({
         type: 'success',
@@ -67,9 +101,10 @@ const RegisterPage = () => {
       setForm(initialFormState);
       setSubmitCount(0);
     } catch (err) {
+      console.error('Registration error:', err);
       setStatus({
         type: 'error',
-        message: err?.message || 'Unable to create account right now. Try again later.',
+        message: getErrorMessage(err),
       });
     }
   };
@@ -79,9 +114,9 @@ const RegisterPage = () => {
       <h1>Create your account</h1>
       <p className="register-subtitle">Enter your details to register for access.</p>
 
-      <form className="register-form" onSubmit={handleSubmit} noValidate>
-        <label>
-          Name
+      <form className="register-form form" onSubmit={handleSubmit} noValidate>
+        <label className="form__field">
+          <span className="form__label">Name</span>
           <input
             id="name"
             name="name"
@@ -91,12 +126,13 @@ const RegisterPage = () => {
             autoComplete="name"
             disabled={isSubmitting}
             required
+            className="form__input"
           />
           {errors.name ? <span className="field-error">{errors.name}</span> : null}
         </label>
 
-        <label>
-          Email
+        <label className="form__field">
+          <span className="form__label">Email</span>
           <input
             id="email"
             name="email"
@@ -106,12 +142,13 @@ const RegisterPage = () => {
             autoComplete="email"
             disabled={isSubmitting}
             required
+            className="form__input"
           />
           {errors.email ? <span className="field-error">{errors.email}</span> : null}
         </label>
 
-        <label>
-          Password
+        <label className="form__field">
+          <span className="form__label">Password</span>
           <input
             id="password"
             name="password"
@@ -121,11 +158,12 @@ const RegisterPage = () => {
             autoComplete="new-password"
             disabled={isSubmitting}
             required
+            className="form__input"
           />
           {errors.password ? <span className="field-error">{errors.password}</span> : null}
         </label>
 
-        <button type="submit" disabled={isSubmitting}>
+        <button type="submit" className="btn btn--primary btn--full" disabled={isSubmitting}>
           {isSubmitting ? 'Creating account…' : 'Create account'}
         </button>
       </form>
@@ -137,7 +175,7 @@ const RegisterPage = () => {
         <p className="status-message status-message--error">{status.message}</p>
       ) : null}
 
-      <p className="register-footer">
+      <p className="register-footer text-muted">
         Already have an account? <a href="/login">Sign in</a>
       </p>
     </div>

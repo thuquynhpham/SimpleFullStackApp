@@ -1,10 +1,9 @@
 .login-page {
+  width: 100%;
   max-width: 420px;
-  margin: 40px auto;
-  padding: 0 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+  margin: 0 auto;
+  display: grid;
+  gap: var(--spacing-lg);
 }
 
 .login-page h1 {
@@ -14,13 +13,12 @@
 
 .login-subtitle {
   margin: 0;
-  color: #4b5563;
+  color: var(--color-text-muted);
 }
 
 .login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
+  display: grid;
+  gap: var(--spacing-lg);
 }
 
 .login-form label {
@@ -60,9 +58,9 @@
 
 .status-message {
   margin: 0;
-  padding: 10px 12px;
-  border-radius: 6px;
-  font-size: 0.95rem;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
 }
 
 .status-message--success {
@@ -72,11 +70,13 @@
 
 .status-message--error {
   background: #fee2e2;
-  color: #b91c1c;
+  border: 1px solid var(--color-danger);
+  color: #991b1b;
 }
 
 .login-footer {
   margin: 0;
   color: #4b5563;
+  font-size: 0.9rem;
 }
 

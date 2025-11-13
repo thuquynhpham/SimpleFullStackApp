@@ -24,6 +24,55 @@ const validate = ({ email, password }) => {
   return errors;
 };
 
+const getErrorMessage = (error) => {
+  if (!error) return 'Login failed. Please try again.';
+
+  const { response, request, message } = error;
+
+  if (response) {
+    const { data, status, statusText } = response;
+
+    if (typeof data === 'string') {
+      return data;
+    }
+
+    if (data && typeof data.message === 'string') {
+      return data.message;
+    }
+
+    if (data && typeof data.title === 'string') {
+      return data.title;
+    }
+
+    return `Login failed: ${status} ${statusText}`;
+  }
+
+  if (request) {
+    return 'Unable to connect to server. Please check your connection.';
+  }
+
+  return message || 'Login failed. Please try again.';
+};
+
+const parseToken = (token) => {
+  if (typeof token === 'string') {
+    if (token.startsWith('"') && token.endsWith('"')) {
+      try {
+        return JSON.parse(token);
+      } catch (err) {
+        console.error('Unable to parse token:', err);
+      }
+    }
+    return token;
+  }
+
+  if (token && typeof token === 'object') {
+    return token.token || token.Token || null;
+  }
+
+  return null;
+};
+
 const LoginPage = () => {
   const [form, setForm] = useState(initialFormState);
   const [status, setStatus] = useState({ type: null, message: '' });
@@ -53,23 +102,29 @@ const LoginPage = () => {
 
     try {
       setStatus({ type: 'loading', message: '' });
-      
+
       const { data } = await api.post('/Users/signin', {
         email: form.email,
         password: form.password,
       });
 
-      const token = data;
+      const token = parseToken(data);
+
+      if (!token) {
+        throw new Error('Invalid token received from server.');
+      }
+
       setAuthToken(token);
 
-      setStatus({ type: null, message: '' });
+      setStatus({ type: 'success', message: '' });
       setForm(initialFormState);
       setSubmitCount(0);
       navigate('/products', { replace: true });
     } catch (err) {
+      console.error('Login error:', err);
       setStatus({
         type: 'error',
-        message: err?.response?.data?.message || err?.response?.data || 'Unable to sign in right now. Try again later.',
+        message: getErrorMessage(err),
       });
     }
   };
@@ -79,9 +134,9 @@ const LoginPage = () => {
       <h1>Welcome back</h1>
       <p className="login-subtitle">Enter your credentials to access your account.</p>
 
-      <form className="login-form" onSubmit={handleSubmit} noValidate>
-        <label>
-          Email
+      <form className="login-form form" onSubmit={handleSubmit} noValidate>
+        <label className="form__field">
+          <span className="form__label">Email</span>
           <input
             id="email"
             name="email"
@@ -91,12 +146,13 @@ const LoginPage = () => {
             autoComplete="email"
             disabled={isSubmitting}
             required
+            className="form__input"
           />
           {errors.email ? <span className="field-error">{errors.email}</span> : null}
         </label>
 
-        <label>
-          Password
+        <label className="form__field">
+          <span className="form__label">Password</span>
           <input
             id="password"
             name="password"
@@ -106,23 +162,21 @@ const LoginPage = () => {
             autoComplete="current-password"
             disabled={isSubmitting}
             required
+            className="form__input"
           />
           {errors.password ? <span className="field-error">{errors.password}</span> : null}
         </label>
 
-        <button type="submit" disabled={isSubmitting}>
+        <button type="submit" className="btn btn--primary btn--full" disabled={isSubmitting}>
           {isSubmitting ? 'Signing in…' : 'Sign in'}
         </button>
       </form>
 
-      {status.type === 'success' ? (
-        <p className="status-message status-message--success">{status.message}</p>
-      ) : null}
       {status.type === 'error' ? (
         <p className="status-message status-message--error">{status.message}</p>
       ) : null}
 
-      <p className="login-footer">
+      <p className="login-footer text-muted">
         Need an account? <a href="/register">Create one</a>
       </p>
     </div>
